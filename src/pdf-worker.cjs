@@ -1,0 +1,2 @@
+const {parentPort,workerData}=require('node:worker_threads');const fs=require('node:fs/promises');const {inspect,correct}=require('./pdf-corrections.cjs');
+(async()=>{const bytes=await fs.readFile(workerData.filename);const result=workerData.action==='inspect'?await inspect(bytes,workerData.page):await correct(bytes,workerData.edits,workerData.rotations);parentPort.postMessage({ok:true,result});})().catch(e=>parentPort.postMessage({ok:false,error:e.message}));

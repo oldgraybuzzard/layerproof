@@ -1,0 +1,30 @@
+name: Build Windows installer
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run dist:win
+      - name: Verify Windows installation and removal
+        shell: pwsh
+        run: ./scripts/test-windows-install.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LayerProof-Windows-installer
+          path: dist/*.exe

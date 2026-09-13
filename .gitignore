@@ -1,0 +1,21 @@
+node_modules/
+dist/
+test-results/
+.DS_Store
+*.log
+
+# Local configuration, credentials, and client work products
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+*.p12
+*.pdf
+*.PDF
+*.xlsx
+*.xls
+*.xlsm
+*.corrections.json
+*.ocr-qc.lock
+*.backups/

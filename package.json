@@ -1,0 +1,67 @@
+{
+  "name": "pdf-ocr-qc",
+  "version": "0.1.9",
+  "description": "Local PDF OCR quality review with an Excel control register",
+  "private": true,
+  "main": "src/main.cjs",
+  "author": "Melken TechWork",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "test:samples": "node scripts/check-samples.mjs",
+    "dist:win": "electron-builder --win nsis --x64 --publish never",
+    "dist:mac": "electron-builder --mac dir --publish never"
+  },
+  "dependencies": {
+    "@embedpdf/pdfium": "2.15.0",
+    "fast-xml-parser": "^5.2.5",
+    "fflate": "^0.8.2",
+    "pdfjs-dist": "5.4.149"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.kendallfelder.pdfocrqc",
+    "productName": "LayerProof",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": true,
+      "signExecutable": false,
+      "icon": "src/assets/layerproof.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "LayerProof",
+      "uninstallDisplayName": "LayerProof",
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": false
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "identity": null
+    },
+    "copyright": "Copyright \u00a9 2026 Melken TechWork"
+  }
+}
