@@ -24,6 +24,17 @@ function deskewPage(p,page,degrees){
  if(!p.FPDFPage_GenerateContent(page))throw Error('Cannot generate deskewed page content.');
  return {degrees,scale,matrix:[a,b,c,d,e,f]};
 }
+// PDFium's extracted object text can gain/lose boundary spaces when neighboring
+// objects are removed. Keep object identity/order and every non-boundary character
+// strict; only ASCII spaces at the edges are presentation-dependent.
+const verificationText=text=>text.replace(/^ +| +$/g,'');
+function verifyTextObjects(actual,expected,page){
+ if(actual.length!==expected.length)throw Error(`Page ${page}: saved OCR block count differs from the requested result. Export cancelled.`);
+ for(let i=0;i<expected.length;i++){
+  const a=actual[i],e=expected[i];
+  if(a.index!==e.index||a.editable!==e.editable||verificationText(a.text)!==verificationText(e.text))throw Error(`Page ${page}, text block ${e.index}: saved text did not match the requested corrections or deletions. Export cancelled.`);
+ }
+}
 async function correct(bytes,edits,rotations=[],deskews=[]){
  if(!Array.isArray(edits)||edits.length>500||!Array.isArray(rotations)||rotations.length>10000||!Array.isArray(deskews)||deskews.length>10000||(!edits.length&&!rotations.length&&!deskews.length))throw Error('Choose text corrections or page rotations to export.');
  const deskewPages=new Set();for(const d of deskews){if(!Number.isInteger(d.page)||d.page<1||!Number.isFinite(d.degrees)||Math.abs(d.degrees)>10||Math.abs(d.degrees)<0.01||deskewPages.has(d.page))throw Error('Choose one deskew angle between -10 and 10 degrees per page (not zero).');deskewPages.add(d.page);}
@@ -40,7 +51,7 @@ async function correct(bytes,edits,rotations=[],deskews=[]){
  }finally{p.FPDF_ClosePage(page);}}
  output=saveBytes(p,file.doc);
  }finally{file.close();}
- const verified=load(p,output);try{for(const [number,digest] of visuals){const page=pageHandle(p,verified.doc,number);try{const orientation=orientations.get(number);if(p.FPDFPage_GetRotation(page)!==orientation.after||pixels(p,page)!==rotatedPixels.get(number))throw Error('Saved page rotation did not match the requested orientation. Export cancelled.');p.FPDFPage_SetRotation(page,orientation.before);if(!deskewPages.has(number)&&pixels(p,page)!==digest)throw Error('Saved PDF changed the page appearance. Export cancelled.');const actual=listObjects(p,page).objects.map(({index,text,editable})=>({index,text,editable}));if(JSON.stringify(actual)!==JSON.stringify(expected.get(number)))throw Error('Saved text did not match the requested corrections or deletions. Export cancelled.');}finally{p.FPDF_ClosePage(page);}}}finally{verified.close();}
+ const verified=load(p,output);try{for(const [number,digest] of visuals){const page=pageHandle(p,verified.doc,number);try{const orientation=orientations.get(number);if(p.FPDFPage_GetRotation(page)!==orientation.after||pixels(p,page)!==rotatedPixels.get(number))throw Error('Saved page rotation did not match the requested orientation. Export cancelled.');p.FPDFPage_SetRotation(page,orientation.before);if(!deskewPages.has(number)&&pixels(p,page)!==digest)throw Error('Saved PDF changed the page appearance. Export cancelled.');const actual=listObjects(p,page).objects.map(({index,text,editable})=>({index,text,editable}));verifyTextObjects(actual,expected.get(number),number);}finally{p.FPDF_ClosePage(page);}}}finally{verified.close();}
  return {bytes:output,verification:{editedPages:[...visuals.keys()],textReadback:true,pagePixelsUnchanged:rotations.length===0&&deskews.length===0,pageContentPixelsUnchanged:deskews.length===0,deskewReadback:true,deskews:deskewResults,rotationReadback:true,rotations:rotations.map(r=>({...r,beforeDegrees:orientations.get(r.page).before*90,afterDegrees:orientations.get(r.page).after*90})),renderDpi:96,maxRenderDimension:4096},sourceSha256:crypto.createHash('sha256').update(bytes).digest('hex'),outputSha256:crypto.createHash('sha256').update(output).digest('hex')};
 }
 module.exports={inspect,correct,getEngine,load,saveBytes,pixels};

@@ -42,3 +42,19 @@ test('deskew preserves text, saves transformed bounds, combines with correction 
  for(const degrees of [-10,-0.1,0.1,10])assert((await correct(bytes,[],[],[{page:1,degrees}])).verification.deskewReadback);
  await assert.rejects(()=>correct(bytes,[],[],[{page:1,degrees:11}]),/deskew angle/);
 });
+
+async function spacingFixture(){
+ const p=await getEngine(),doc=p.FPDF_CreateNewDocument(),page=p.FPDFPage_New(doc,0,300,200);
+ try{for(const [text,x] of [['MINERALS ',25],['T',95],['HE',115]]){
+  const obj=p.FPDFPageObj_NewTextObj(doc,'Helvetica',12),b=Buffer.from(text+'\0','utf16le'),ptr=p.pdfium.wasmExports.malloc(b.length);p.pdfium.HEAPU8.set(b,ptr);assert(p.FPDFText_SetText(obj,ptr));p.pdfium.wasmExports.free(ptr);p.FPDFTextObj_SetTextRenderMode(obj,3);p.FPDFPageObj_Transform(obj,1,0,0,1,x,70);p.FPDFPage_InsertObject(page,obj);
+ }assert(p.FPDFPage_GenerateContent(page));return saveBytes(p,doc);}finally{p.FPDF_ClosePage(page);p.FPDF_CloseDocument(doc);}
+}
+test('deleting adjacent OCR objects tolerates extraction boundary-space changes without losing retained text',async()=>{
+ const bytes=await spacingFixture(),objects=(await inspect(bytes,1)).objects;assert.equal(objects[0].text,'MINERALS ');
+ const result=await correct(bytes,objects.slice(1).map(o=>({page:1,index:o.index,before:o.text,after:'',operation:'delete'})));
+ const saved=(await inspect(result.bytes,1)).objects;assert.equal(saved.length,1);assert.equal(saved[0].text,'MINERALS');assert(result.verification.pagePixelsUnchanged);assert(result.verification.textReadback);
+});
+test('unsupported replacement characters still fail saved-text verification with page and block details',async()=>{
+ const bytes=await spacingFixture(),obj=(await inspect(bytes,1)).objects[0];
+ await assert.rejects(()=>correct(bytes,[{page:1,index:obj.index,before:obj.text,after:'MINERALS 😀'}]),/Page 1, text block 0: saved text/);
+});

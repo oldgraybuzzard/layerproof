@@ -129,3 +129,7 @@ Choose **Help** in the header or press **F1** to open the offline reviewer guide
 - **Trusted Windows signing** is prepared separately from ordinary unsigned builds. See [SIGNING.md](SIGNING.md). An authorized certificate or Azure signing setup is still required; no trusted signed installer has been produced yet.
 
 Workbook completion and assignment are portable; unfinished page checks, local draft recovery and output registration remain on the review computer. Handoff reports include saved workbook data only. Keep workbooks, sources and outputs outside the application installation directory.
+
+## LayerProof 0.3.1
+
+Fixes a false export rejection when deleting neighboring OCR blocks changes the boundary spaces returned by PDFium's text reader. Verification still checks block identity, order, count, render mode, internal spacing and all non-boundary characters, alongside the page appearance checks. Failures now identify the page and text block. Validated against the document 64 reproduction, a 108-deletion margin-text batch, and a representative 192-deletion batch. These are local test scenarios, not the worker's unavailable exact pending change list. Client originals were not modified.

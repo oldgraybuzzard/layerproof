@@ -22,3 +22,11 @@
 Previous readiness work completed in 0.2.0. All 43 tests pass. Live app verification covered resume, draft restore, reviewer saving, repeated exports with backups, and corrected-copy editing.
 
 Windows verification: https://github.com/oldgraybuzzard/layerproof/actions/runs/34777899727 — installation, 0.1.10 → 0.2.0 upgrade, settings/draft/history preservation, and uninstall passed.
+
+## 0.3.1 export fix
+
+- [x] Reproduce document 64 OCR deletion export failure.
+- [x] Accept boundary-space extraction changes while preserving strict text/content checks.
+- [x] Add regression tests for adjacent deletions and unsupported replacement characters.
+- [x] Verify sample-document batches (108 and 192 deletions) without changing source files.
+- [ ] Windows release validation.
