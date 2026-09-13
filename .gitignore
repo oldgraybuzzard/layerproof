@@ -19,3 +19,6 @@ test-results/
 *.corrections.json
 *.ocr-qc.lock
 *.backups/
+
+previous-release/
+*.layerproof.lock

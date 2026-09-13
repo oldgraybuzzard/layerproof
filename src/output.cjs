@@ -1,0 +1,10 @@
+const fs=require('node:fs/promises');const path=require('node:path');const crypto=require('node:crypto');
+const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+async function exists(p){try{await fs.access(p);return true;}catch(e){if(e.code==='ENOENT')return false;throw e;}}
+async function writeCorrected(destination,bytes,audit){
+ const log=destination+'.corrections.json',lock=destination+'.layerproof.lock';const owner=await fs.open(lock,'wx').catch(e=>{if(e.code==='EEXIST')throw Error('Another export is using this destination.');throw e;});let backup=null;const temp=destination+'.'+crypto.randomUUID()+'.tmp',tempLog=temp+'.json';let replaced=false;
+ try{const present=await exists(destination),logged=await exists(log);if(present||logged){if(!present||!logged)throw Error('This filename belongs to an unrecognized output. Choose a different output folder.');const old=JSON.parse(await fs.readFile(log,'utf8'));if((old.originalSource||old.source)!==audit.originalSource||hash(await fs.readFile(destination))!==old.outputSha256)throw Error('The existing output belongs to another source or was changed outside LayerProof. Choose a different output folder.');backup=path.join(destination+'.backups',new Date().toISOString().replace(/[:.]/g,'-')+'-'+crypto.randomUUID());await fs.mkdir(backup,{recursive:true});await fs.copyFile(destination,path.join(backup,path.basename(destination)));await fs.copyFile(log,path.join(backup,path.basename(log)));}
+ await fs.writeFile(temp,bytes,{flag:'wx'});await fs.writeFile(tempLog,JSON.stringify(audit,null,2),{flag:'wx'});await fs.rename(temp,destination);replaced=true;await fs.rename(tempLog,log);return {path:destination,auditFile:log,backup};
+ }catch(e){if(replaced){if(backup){await fs.copyFile(path.join(backup,path.basename(destination)),destination);await fs.copyFile(path.join(backup,path.basename(log)),log);}else await fs.unlink(destination).catch(()=>{});}throw e;}finally{await fs.unlink(temp).catch(()=>{});await fs.unlink(tempLog).catch(()=>{});await owner.close();await fs.unlink(lock).catch(()=>{});}
+}
+module.exports={writeCorrected};

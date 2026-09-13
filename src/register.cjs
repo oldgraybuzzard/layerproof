@@ -36,11 +36,13 @@ function decode(buffer) {
       const qcColumns=Object.keys(header.cells).filter(col=>['qc reviewed','qc performed'].includes(String(header.cells[col]).trim().toLowerCase()));
       if(qcColumns.length>1)throw Error('Multiple QC review columns found. Keep one QC Reviewed or QC Performed column.');
       const qcColumn=qcColumns[0]||null;
+      const auditColumn=name=>{const columns=Object.keys(header.cells).filter(c=>String(header.cells[c]).trim().toLowerCase()===name);if(columns.length>1||columns.some(c=>colNumber(c)<=5))throw Error('Use one '+name+' column after A–E.');return columns[0]||null;};
+      const reviewerColumn=auditColumn('qc reviewed by'),reviewedOnColumn=auditColumn('qc reviewed on');
       if(qcColumn&&colNumber(qcColumn)<=5)throw Error('Place QC Reviewed after the existing A–E control columns.');
       // Append beyond every existing cell and merged range, never overwrite a client column.
       const refs=[...strFromU8(files[member]).matchAll(/\b(?:r|ref)="([A-Z]+)[0-9]+(?::([A-Z]+)[0-9]+)?"/g)];
       const lastColumn=refs.reduce((max,m)=>Math.max(max,colNumber(m[1]),m[2]?colNumber(m[2]):0),5);
-      registers.push({sheet:sheet['@name'],member,headerRow:header.row,qcColumn,nextColumn:colName(lastColumn+1),records:rows.filter(r=>r.row>header.row && r.cells.A?.trim()).map(r=>({key:member+':'+r.row,row:r.row,id:r.cells.A,format:r.cells.B||'',compliant:r.cells.C||'',hasIssues:r.cells.D||'',concerns:r.cells.E||'',qcReviewed:qcColumn?reviewedValue(r.cells[qcColumn]):null}))});
+      registers.push({sheet:sheet['@name'],member,headerRow:header.row,qcColumn,reviewerColumn,reviewedOnColumn,nextColumn:colName(lastColumn+1),records:rows.filter(r=>r.row>header.row && r.cells.A?.trim()).map(r=>({key:member+':'+r.row,row:r.row,id:r.cells.A,format:r.cells.B||'',compliant:r.cells.C||'',hasIssues:r.cells.D||'',concerns:r.cells.E||'',qcReviewed:qcColumn?reviewedValue(r.cells[qcColumn]):null,qcReviewer:r.cells[reviewerColumn]||'',qcReviewedOn:r.cells[reviewedOnColumn]||''}))});
     }
   }
   if(registers.length!==1) throw Error(registers.length ? 'Multiple control sheets found. Use a workbook with one Document ID / Has Issues register.' : 'No control sheet found. Expected Document ID in column A and Has Issues in column D.');
@@ -66,7 +68,7 @@ function patchCell(xml, address, text) {
     return later ? rowXml.slice(0,later.index)+cell+rowXml.slice(later.index) : rowXml.replace('</row>',cell+'</row>');
   });
 }
-function updateBuffer(buffer,key,hasIssues,concerns,reviewed,legacyReviewedKeys=[]) {
+function updateBuffer(buffer,key,hasIssues,concerns,reviewed,legacyReviewedKeys=[],audit=null) {
   if(reviewed!==undefined && typeof reviewed!=='boolean')throw Error('QC Reviewed must be true or false.');
   if(!['Yes','No'].includes(hasIssues)) throw Error('Select Yes or No.');
   if(hasIssues==='Yes' && !concerns.trim()) throw Error('Describe the issues before saving Yes.');
@@ -76,7 +78,7 @@ function updateBuffer(buffer,key,hasIssues,concerns,reviewed,legacyReviewedKeys=
   let xml=strFromU8(wb.files[wb.member]);
   xml=patchCell(xml,'D'+record.row,hasIssues); xml=patchCell(xml,'E'+record.row,concerns);
   if(reviewed!==undefined){
-    const column=wb.qcColumn||wb.nextColumn;
+    let column=wb.qcColumn||wb.nextColumn;
     if(colNumber(column)>16384)throw Error('No free Excel column remains for QC Reviewed.');
     if(!wb.qcColumn){
       xml=patchCell(xml,column+wb.headerRow,'QC Reviewed');
@@ -84,6 +86,17 @@ function updateBuffer(buffer,key,hasIssues,concerns,reviewed,legacyReviewedKeys=
       for(const other of wb.records)if(other.key!==key&&legacy.has(other.key))xml=patchCell(xml,column+other.row,'Yes');
     }
     xml=patchCell(xml,column+record.row,reviewed?'Yes':'No');
+    if(audit){
+      if(typeof audit.reviewer!=='string'||!audit.reviewer.trim()||audit.reviewer.length>100)throw Error('Reviewer name is required.');
+      if(reviewed&&!/^\d{4}-\d\d-\d\dT/.test(audit.completedAt||''))throw Error('Completion date is required.');
+      let next=Math.max(colNumber(wb.nextColumn),colNumber(column)+1);
+      const reviewerCol=wb.reviewerColumn||colName(next++),dateCol=wb.reviewedOnColumn||colName(next++);
+      if(Math.max(colNumber(reviewerCol),colNumber(dateCol))>16384)throw Error('No free Excel columns remain for review details.');
+      if(!wb.reviewerColumn)xml=patchCell(xml,reviewerCol+wb.headerRow,'QC Reviewed By');
+      if(!wb.reviewedOnColumn)xml=patchCell(xml,dateCol+wb.headerRow,'QC Reviewed On');
+      xml=patchCell(xml,reviewerCol+record.row,audit.reviewer.trim());xml=patchCell(xml,dateCol+record.row,reviewed?audit.completedAt:'');
+      column=colName(Math.max(colNumber(column),colNumber(reviewerCol),colNumber(dateCol)));
+    }
     // Keep the used range accurate for Excel and readers that honor dimension.
     xml=xml.replace(/<dimension\b[^>]*\bref="([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?"[^>]*\/>/,(_,left,top,right,bottom)=>`<dimension ref="${left}${top}:${colName(Math.max(colNumber(right||left),colNumber(column)))}${wb.records.reduce((max,r)=>Math.max(max,r.row),Number(bottom||top))}"/>`);
   }
@@ -152,14 +165,14 @@ function discoveryReport(session){
   const rows=session.records.map(r=>({row:r.row,id:r.id,status:r.exact.length===1?'exact':r.exact.length>1?'ambiguous':r.suggested.length?'suggested':'unmatched',exact:r.exact,suggested:r.suggested}));
   return {workbook:session.workbook,folder:session.folder,...session.diagnostics,pdfCount:session.files.length,rowCounts:{exact:rows.filter(r=>r.status==='exact').length,ambiguous:rows.filter(r=>r.status==='ambiguous').length,suggested:rows.filter(r=>r.status==='suggested').length,unmatched:rows.filter(r=>r.status==='unmatched').length},rows,files:session.files};
 }
-async function saveRegister(filename,expectedHash,key,hasIssues,concerns,reviewed,legacyReviewedKeys=[]) {
+async function saveRegister(filename,expectedHash,key,hasIssues,concerns,reviewed,legacyReviewedKeys=[],audit=null) {
   const lock=filename+'.ocr-qc.lock'; let handle;
   try {handle=await fs.open(lock,'wx');} catch(e) {if(e.code==='EEXIST') throw Error('Another review save is in progress. If no app is saving, remove the stale .ocr-qc.lock file.'); throw e;}
   let temp;
   try {
     const before=await fs.readFile(filename);
     if(hash(before)!==expectedHash) throw Error('Workbook changed outside this session. Reopen it before saving; your on-screen edits are still available.');
-    const updated=updateBuffer(before,key,hasIssues,concerns,reviewed,legacyReviewedKeys);
+    const updated=updateBuffer(before,key,hasIssues,concerns,reviewed,legacyReviewedKeys,audit);
     const stamp=new Date().toISOString().replace(/[:.]/g,'-')+'-'+crypto.randomBytes(3).toString('hex');
     const backup=filename+'.backups'; await fs.mkdir(backup,{recursive:true});
     const backupFile=path.join(backup,path.basename(filename,'.xlsx')+'-'+stamp+'.xlsx');

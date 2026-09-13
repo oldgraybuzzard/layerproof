@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,9 +21,19 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run dist:win
-      - name: Verify Windows installation and removal
+      - name: Check out previous release for upgrade testing
+        uses: actions/checkout@v4
+        with:
+          ref: 6b92949
+          path: previous-release
+      - name: Build previous Windows release
+        working-directory: previous-release
+        run: |
+          npm ci
+          npm run dist:win
+      - name: Verify Windows installation, upgrade and removal
         shell: pwsh
-        run: ./scripts/test-windows-install.ps1
+        run: ./scripts/test-windows-install.ps1 -PreviousInstaller (Get-ChildItem "previous-release/dist/LayerProof Setup *.exe" | Select-Object -First 1).FullName
       - uses: actions/upload-artifact@v4
         with:
           name: LayerProof-Windows-installer

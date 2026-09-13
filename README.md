@@ -4,7 +4,7 @@ A local desktop application for reviewing existing PDF text against the scanned 
 
 ## Windows installation
 
-Run `dist/LayerProof Setup 0.1.10.exe` on a Windows 10/11 x64 machine. This development release is unsigned; it has not yet been exercised on a physical Windows machine. Use your organization's normal software approval process.
+Run `dist/LayerProof Setup 0.2.0.exe` on a Windows 10/11 x64 machine. This development release is unsigned; it has not yet been exercised on a physical Windows machine. Use your organization's normal software approval process.
 
 1. Open **LayerProof** and choose **Open review project**.
 2. Select the `.xlsx` control workbook, then the folder containing PDFs. Subfolders are included.
@@ -77,7 +77,7 @@ Copyright © 2026 Melken TechWork. The application and installer carry Melken Te
 
 Select a stored text segment and click **Correct OCR text…**. Choose its invisible PDF text block, enter a small correction, and stage it. If the selected text occurs more than once, choose the intended block explicitly. Corrections may cover multiple pages of the current document. Repeated exports in the same open-document session include earlier exported corrections. When reopening a document later, open the corrected copy if you want to continue from those changes; the original remains unchanged.
 
-**Export corrected PDF…** asks for a separate output folder and keeps the original PDF filename (for example, `40.pdf`). Choose or create a folder outside the source PDF tree so corrected copies do not appear as duplicate matches on rescan. It writes a new PDF and a sibling `.corrections.json` log containing original/replacement text, page/block identifiers, file hashes, and verification results. Existing files are never replaced. The original stays open for review; the app adds a page-specific export note to Concerns, which you save to Excel separately. Staged corrections are held in memory until exported. Save to workbook does not save or apply PDF corrections. Export or explicitly discard them before leaving the document.
+**Export corrected PDF…** asks for a separate output folder and keeps the original PDF filename (for example, `40.pdf`). Choose or create a folder outside the source PDF tree so corrected copies do not appear as duplicate matches on rescan. It writes a new PDF and a sibling `.corrections.json` log containing original/replacement text, page/block identifiers, file hashes, and verification results. Recognized corrected outputs can be updated in the same folder; the prior PDF and log are backed up first. Unrelated or externally changed files are not replaced. The original stays open for review; the app adds a page-specific export note to Concerns, which you save to Excel separately. Staged corrections are held in memory until exported. Save to workbook does not save or apply PDF corrections. Export or explicitly discard them before leaving the document.
 
 This release edits top-level invisible text objects only. Visible text, text inside nested forms, encrypted PDFs, and digitally signed PDFs remain review-only. The existing font must support the replacement. If read-back verification fails, the app refuses to export that change. It does not add missing OCR, replace the scan, or repair accessibility tags. After correction, the text selection width can differ slightly because the word has changed. Review the exported copy before client delivery.
 
@@ -108,3 +108,13 @@ Select a stored text segment, open **Correct OCR text**, choose the block, then 
 ## In-app Help
 
 Choose **Help** in the header or press **F1** to open the offline reviewer guide in a separate window. Search by topic or use **Print guide** for a paper/PDF handout. The guide covers setup, workbook columns, page review, saving and resuming, text correction/deletion, exported page turns, accuracy, and troubleshooting. It does not require a project to be open and does not change review data.
+
+## Production workflow (0.2.0)
+
+- **Resume last review** reopens the last workbook and PDF folder. Reviewer name and each project’s output folder are remembered on this computer.
+- Recovery drafts save locally after a short pause (400 ms) in editing and are flushed on normal close. Drafts include decisions, notes, checked pages, text changes/deletions and rotations. Reopening the project offers Restore or Discard. If the workbook row or PDF changed, restoration is stopped; the prompt displays notes for copying. Draft recovery does not save Excel or export PDFs for you. A sudden power loss can still lose the latest unsaved keystrokes.
+- Enter **Reviewer name** before saving. Saves add/reuse **QC Reviewed By** and **QC Reviewed On**. The timestamp is ISO 8601 UTC and is set when all pages are checked; a partial review has a reviewer but no completion timestamp. These are reviewer-entered names, not authenticated signatures.
+- The project summary counts all workbook rows, with completed, remaining, issues, and unmatched totals. Categories overlap; a completed row may have issues.
+- **Output folder…** sets the project’s corrected-PDF folder. Repeat exports update a recognized, unchanged prior output, backing up the PDF and log in `<output.pdf>.backups/`. Files from another source or changed outside LayerProof are refused. A filename collision between sources requires another folder.
+- The viewer labels **Original PDF** or **Corrected copy**. After saving the review, use **Open corrected copy** to inspect and continue editing the exported version. Further exports from that copy reload it with its updated signature.
+- Windows CI installs 0.1.10, upgrades to the current build, verifies version and preservation of settings/drafts/history, then uninstalls and checks cleanup.

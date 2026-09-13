@@ -21,3 +21,5 @@ export function nextPending(records,reviews,currentKey){
   const index=records.findIndex(r=>r.key===currentKey);
   return [...records.slice(index+1),...records.slice(0,Math.max(index,0))].find(r=>hasPDF(r)&&!isComplete(r,reviews))||null;
 }
+
+export function projectSummary(records,reviews){const complete=records.filter(r=>isComplete(r,reviews)).length;return {total:records.length,complete,remaining:records.length-complete,issues:records.filter(r=>r.hasIssues.toLowerCase()==='yes').length,missing:records.filter(r=>!hasPDF(r)).length};}
