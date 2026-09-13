@@ -24,7 +24,7 @@ jobs:
       - name: Check out previous release for upgrade testing
         uses: actions/checkout@v4
         with:
-          ref: 6b92949
+          ref: 6b9294912c42cbf765d5c2b2056bc84ac148be0d
           path: previous-release
       - name: Build previous Windows release
         working-directory: previous-release
