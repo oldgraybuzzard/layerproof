@@ -47,7 +47,7 @@ handle('reviewer',async name=>{name=String(name||'').trim();if(!name||name.lengt
 handle('draft',async payload=>storeDraft(payload));
 handle('recover',async()=>{if(!session)return null;return readJSON(draftPath(),null);});
 handle('validate-draft',async draft=>{const row=selectedRecord(draft.key);await validatePDF(draft.pdf,draft.signature);if(!draftCompatible(draft,row,draft.signature))throw Error('The workbook row changed since this draft. Copy its notes before discarding; automatic restore was stopped.');return true;});
-handle('output-folder',async()=>{if(!session)throw Error('Open a project first.');const picked=await dialog.showOpenDialog(window,{title:'Select corrected PDF output folder',defaultPath:session.outputFolder||path.dirname(session.folder),properties:['openDirectory','createDirectory']});if(picked.canceled)return null;session.outputFolder=await fs.realpath(picked.filePaths[0]);remember();return session.outputFolder;});
+handle('output-folder',async()=>{if(pdfBusy||saving)throw Error('Wait for the current save or export.');if(!session)throw Error('Open a project first.');const picked=await dialog.showOpenDialog(window,{title:'Select corrected PDF output folder',defaultPath:session.outputFolder||path.dirname(session.folder),properties:['openDirectory','createDirectory']});if(picked.canceled)return null;session.outputFolder=await fs.realpath(picked.filePaths[0]);remember();return session.outputFolder;});
 handle('initial',async()=>publicSession());
 handle('open-session',async()=>{
   const w=await dialog.showOpenDialog(window,{title:'Open control workbook',filters:[{name:'Excel workbook',extensions:['xlsx']}],properties:['openFile']});if(w.canceled)return null;
