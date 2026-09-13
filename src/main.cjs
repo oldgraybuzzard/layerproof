@@ -109,13 +109,14 @@ handle('export-corrections',async payload=>{
     return {...written,verification:result.verification,session:publicSession()};
   }finally{pdfBusy=false;}
 });
-handle('read-pdf',async filename=>{selectedFile(filename);const stat=await fs.stat(filename),bytes=await fs.readFile(filename);let kind=Object.values(session.outputs).includes(filename)?'Corrected copy':'Original PDF';try{const audit=JSON.parse(await fs.readFile(filename+'.corrections.json','utf8'));if(audit.application==='LayerProof'&&audit.outputSha256===hash(bytes)){kind='Corrected copy';session.outputs[audit.originalSource||audit.source]=filename;session.outputFolder||=path.dirname(filename);remember();}}catch(e){if(e.code!=='ENOENT'&&!(e instanceof SyntaxError))throw e;}return {bytes,signature:stat.size+':'+stat.mtimeMs,kind,verification:kind==='Corrected copy'?(await readOutput(filename)).audit.reviewVerification||null:null,session:publicSession()};});
+handle('read-pdf',async filename=>{selectedFile(filename);const stat=await fs.stat(filename),bytes=await fs.readFile(filename);let kind=Object.values(session.outputs).includes(filename)?'Corrected copy':'Original PDF';try{const audit=JSON.parse(await fs.readFile(filename+'.corrections.json','utf8'));if(audit.application==='LayerProof'&&audit.outputSha256===hash(bytes)){kind='Corrected copy';session.outputs[audit.originalSource||audit.source]=filename;session.outputFolder||=path.dirname(filename);remember();}}catch(e){if(e.code!=='ENOENT'&&!(e instanceof SyntaxError))throw e;}return {bytes,sha256:hash(bytes),signature:stat.size+':'+stat.mtimeMs,kind,verification:kind==='Corrected copy'?(await readOutput(filename)).audit.reviewVerification||null:null,session:publicSession()};});
 handle('verify-output',async payload=>{
  if(pdfBusy||saving)throw Error('Wait for the current operation.');pdfBusy=true;
  try{await validatePDF(payload.pdf,payload.signature);if(!Object.values(session.outputs).includes(payload.pdf))throw Error('Open the corrected copy first.');
  const inspected=await pdfJob({action:'page-count',filename:payload.pdf});
  if(!Array.isArray(payload.checkedPages)||new Set(payload.checkedPages.filter(n=>Number.isInteger(n)&&n>=1&&n<=inspected.pageCount)).size!==inspected.pageCount)throw Error('Check every page of the corrected copy before verifying it.');
- return await verifyOutput(payload.pdf,payload.reviewer);
+ if(!/^[a-f0-9]{64}$/.test(payload.sha256||''))throw Error('Reopen the corrected copy before verifying it.');
+ return await verifyOutput(payload.pdf,payload.reviewer,payload.sha256);
  }finally{pdfBusy=false;}
 });
 handle('handoff',async()=>{

@@ -6,7 +6,7 @@ test('verification is tied to exact PDF bytes; a re-export requires a fresh veri
  await writeCorrected(file,bytes,audit);await assert.rejects(()=>requireVerified(file),/latest corrected/);
  await verifyOutput(file,'Reviewer');assert.equal((await requireVerified(file)).audit.reviewVerification.reviewer,'Reviewer');
  const newer=Buffer.from('new bytes');await writeCorrected(file,newer,{...audit,outputSha256:hash(newer)});await assert.rejects(()=>requireVerified(file),/latest corrected/);
- await verifyOutput(file,'Reviewer');await fs.appendFile(file,'tampering');await assert.rejects(()=>requireVerified(file),/changed/);
+ await assert.rejects(()=>verifyOutput(file,'Reviewer',hash(bytes)),/changed after/);await verifyOutput(file,'Reviewer',hash(newer));await fs.appendFile(file,'tampering');await assert.rejects(()=>requireVerified(file),/changed/);
  }finally{await fs.rm(dir,{recursive:true,force:true});}
 });
 test('handoff includes only completed verified outputs, keeps filenames, protects CSV, and excludes machine paths',async()=>{

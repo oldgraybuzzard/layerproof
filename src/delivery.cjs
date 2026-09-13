@@ -13,11 +13,11 @@ async function requireVerified(filename){
  if(!v||v.outputSha256!==result.audit.outputSha256||!v.reviewer||!v.verifiedAt)throw Error('Open the latest corrected copy, check its pages, then choose Verify corrected copy before completing this document.');
  return result;
 }
-async function verifyOutput(filename,reviewer){
+async function verifyOutput(filename,reviewer,expectedHash){
  reviewer=String(reviewer||'').trim();if(!reviewer||reviewer.length>100)throw Error('Enter your reviewer name before verifying.');
  const lock=filename+'.layerproof.lock',handle=await fs.open(lock,'wx').catch(e=>{if(e.code==='EEXIST')throw Error('A PDF export is in progress. Retry verification when it finishes.');throw e;});
  const temp=filename+'.verification-'+crypto.randomUUID()+'.tmp';
- try{const {audit}=await readOutput(filename);audit.reviewVerification={reviewer,verifiedAt:new Date().toISOString(),outputSha256:audit.outputSha256};await fs.writeFile(temp,JSON.stringify(audit,null,2),{flag:'wx'});if(hash(await fs.readFile(filename))!==audit.outputSha256)throw Error('Corrected PDF changed during verification. Reopen it.');await fs.rename(temp,filename+'.corrections.json');return audit.reviewVerification;}
+ try{const {audit}=await readOutput(filename);if(expectedHash&&audit.outputSha256!==expectedHash)throw Error('The corrected PDF changed after you opened it. Reopen and review the new copy.');audit.reviewVerification={reviewer,verifiedAt:new Date().toISOString(),outputSha256:audit.outputSha256};await fs.writeFile(temp,JSON.stringify(audit,null,2),{flag:'wx'});if(hash(await fs.readFile(filename))!==audit.outputSha256)throw Error('Corrected PDF changed during verification. Reopen it.');await fs.rename(temp,filename+'.corrections.json');return audit.reviewVerification;}
  finally{await fs.rm(temp,{force:true});await handle.close();await fs.rm(lock,{force:true});}
 }
 const csvCell=value=>'"'+String(value??'').replace(/^[=+@\-\t\r]/,"'$&").replace(/"/g,'""')+'"';
@@ -33,8 +33,9 @@ async function createHandoff(parent,session,version){
    const output=session.outputs[original];let delivered='';let status=r.qcReviewed?'Reviewed':'Needs review';
    if(output){
     if(!r.qcReviewed)warnings.push(`Excel row ${r.row}: corrected PDF excluded because review is incomplete.`);
-    else try{
-     const {bytes,audit}=await requireVerified(output);
+    else {
+     let verified;try{verified=await requireVerified(output);}catch(e){status='Needs corrected-copy verification';warnings.push(`Excel row ${r.row}: corrected PDF excluded; it is missing, changed, or unverified.`);}
+     if(verified){const {bytes,audit}=verified;
      // Each Excel row gets a folder, retaining the PDF basename without collisions.
      const relative=path.posix.join('corrected-pdfs','row-'+r.row,path.basename(output));
      await fs.mkdir(path.dirname(path.join(folder,relative)),{recursive:true});
@@ -42,7 +43,7 @@ async function createHandoff(parent,session,version){
      if(hash(await fs.readFile(path.join(folder,relative)))!==audit.outputSha256)throw Error('Copied PDF failed its checksum.');
      const portableAudit={...audit,source:r.pdfAssignment||path.basename(audit.source),originalSource:r.pdfAssignment||path.basename(audit.originalSource||audit.source),output:relative};
      await fs.writeFile(path.join(folder,relative+'.corrections.json'),JSON.stringify(portableAudit,null,2),{flag:'wx'});delivered=relative;copied++;
-    }catch(e){if(e.code&&e.code!=='ENOENT')throw e;status='Needs corrected-copy verification';warnings.push(`Excel row ${r.row}: ${e.message}`);}
+    }}
    }
    rows.push({documentId:r.id,excelRow:r.row,status,hasIssues:r.hasIssues,concerns:r.concerns,reviewer:r.qcReviewer,reviewedOn:r.qcReviewedOn,pdfAssignment:r.pdfAssignment||'',correctedPDF:delivered});
   }
