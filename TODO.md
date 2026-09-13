@@ -17,7 +17,7 @@
 - [x] Prepare trusted Windows signing workflow, fail-closed configuration, and setup instructions.
 - [ ] Activate signing and verify an actual signed release after the owner supplies an authorized certificate/service. No signing credentials are configured.
 
-0.3.0 validation: 48 tests pass. Native app testing covered deskew preview and Undo, pending-change and verification completion gates, verified save, durable Excel assignment/completion, and a client handoff containing the checked PDF and review report. Windows installer/upgrade/uninstall CI is pending.
+0.3.0 validation: 48 tests pass. Native app testing covered deskew preview and Undo, pending-change and verification completion gates, verified save, durable Excel assignment/completion, and a client handoff containing the checked PDF and review report. Windows installation, 0.1.10 → 0.3.0 upgrade, shortcuts, uninstall and data preservation passed: https://github.com/oldgraybuzzard/layerproof/actions/runs/34779054844.
 
 Previous readiness work completed in 0.2.0. All 43 tests pass. Live app verification covered resume, draft restore, reviewer saving, repeated exports with backups, and corrected-copy editing.
 
