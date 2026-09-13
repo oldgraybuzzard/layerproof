@@ -118,3 +118,14 @@ Choose **Help** in the header or press **F1** to open the offline reviewer guide
 - **Output folder…** sets the project’s corrected-PDF folder. Repeat exports update a recognized, unchanged prior output, backing up the PDF and log in `<output.pdf>.backups/`. Files from another source or changed outside LayerProof are refused. A filename collision between sources requires another folder.
 - The viewer labels **Original PDF** or **Corrected copy**. After saving the review, use **Open corrected copy** to inspect and continue editing the exported version. Further exports from that copy reload it with its updated signature.
 - Windows CI installs 0.1.10, upgrades to the current build, verifies version and preservation of settings/drafts/history, then uninstalls and checks cleanup.
+
+## LayerProof 0.3.0
+
+- Export opens the corrected copy and resets its page checks. Review every page and choose **Verify corrected copy**, then save completion to Excel. Verification is tied to the PDF checksum; a re-export requires another review. Exporting changes to a completed row clears its completion first.
+- **Pending PDF changes** lists replacements, deletions, rotations and deskew adjustments, each with **Undo** before export.
+- **PDF Assignment** is saved with the review as a path relative to the selected PDF root. The same workbook and subfolder structure can be opened on Windows or another computer. Missing stored paths require explicit reassignment.
+- **Create client handoff…** writes a new dated folder with verified, completed corrected outputs, sanitized change logs, review-summary.csv and manifest.json. It uses the current project's locally registered outputs. Originals and incomplete/unverified outputs are excluded; exclusions are listed. No files are uploaded or sent.
+- **Straighten…** previews a manual −10° to +10° adjustment. Image and OCR transform together and shrink to fit the page. PDFium verifies the rendered exported result and text; pages with annotations are rejected. This is not automatic skew detection or accessibility remediation.
+- **Trusted Windows signing** is prepared separately from ordinary unsigned builds. See [SIGNING.md](SIGNING.md). An authorized certificate or Azure signing setup is still required; no trusted signed installer has been produced yet.
+
+Workbook completion and assignment are portable; unfinished page checks, local draft recovery and output registration remain on the review computer. Handoff reports include saved workbook data only. Keep workbooks, sources and outputs outside the application installation directory.

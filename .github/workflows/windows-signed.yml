@@ -1,0 +1,47 @@
+name: Build signed Windows installer
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        type: choice
+        description: Authorized signing provider (configure windows-signing environment first)
+        required: true
+        options: [azure, certificate]
+permissions:
+  contents: read
+jobs:
+  signed-build:
+    if: github.ref == 'refs/heads/main'
+    environment: windows-signing
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Build with mandatory trusted signing
+        run: npm run dist:win:signed
+        env:
+          LAYERPROOF_SIGNING_PROVIDER: ${{ inputs.provider }}
+          LAYERPROOF_SIGNING_PUBLISHER: ${{ vars.SIGNING_PUBLISHER }}
+          AZURE_SIGNING_ENDPOINT: ${{ vars.AZURE_SIGNING_ENDPOINT }}
+          AZURE_SIGNING_ACCOUNT: ${{ vars.AZURE_SIGNING_ACCOUNT }}
+          AZURE_SIGNING_PROFILE: ${{ vars.AZURE_SIGNING_PROFILE }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+      - name: Verify signatures, installation and uninstall
+        shell: pwsh
+        run: ./scripts/test-windows-install.ps1 -RequireSigned -ExpectedPublisher $env:EXPECTED_PUBLISHER
+        env:
+          EXPECTED_PUBLISHER: ${{ vars.SIGNING_PUBLISHER }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LayerProof-Windows-signed-installer
+          path: dist/*.exe

@@ -1,5 +1,5 @@
 # Run only on a disposable Windows test machine: installs and uninstalls LayerProof.
-param([string]$PreviousInstaller)
+param([string]$PreviousInstaller, [switch]$RequireSigned, [string]$ExpectedPublisher)
 $ErrorActionPreference = 'Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'This test requires Windows.' }
 $registryRoot = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall'
@@ -40,6 +40,16 @@ $p = Start-Process $installer.FullName -ArgumentList @('/S', '/currentuser', "/D
 if ($p.ExitCode -ne 0) { throw "Install failed: $($p.ExitCode)" }
 foreach ($file in @((Join-Path $installDir 'LayerProof.exe'), (Join-Path $installDir 'Uninstall LayerProof.exe'), $desktop, $startMenu)) {
   if (!(Test-Path $file)) { throw "Install did not create $file" }
+}
+if ($RequireSigned) {
+  if (!$ExpectedPublisher) { throw 'Expected publisher is required for signed builds.' }
+  foreach ($signedFile in @($installer.FullName, (Join-Path $installDir 'LayerProof.exe'), (Join-Path $installDir 'Uninstall LayerProof.exe'))) {
+    $signature = Get-AuthenticodeSignature $signedFile
+    if ($signature.Status -ne 'Valid' -or !$signature.TimeStamperCertificate) { throw "Missing valid timestamped signature: $signedFile" }
+    $actualPublisher = $signature.SignerCertificate.GetNameInfo([System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false)
+    if ($actualPublisher -cne $ExpectedPublisher) { throw "Unexpected publisher on $signedFile" }
+  }
+  Write-Output 'PASS: installer, application and uninstaller carry valid timestamped publisher signatures.'
 }
 $entry = Find-App
 if ($entry.Count -ne 1 -or $entry[0].DisplayName -ne 'LayerProof' -or !$entry[0].UninstallString) { throw 'Incorrect Installed apps entry.' }

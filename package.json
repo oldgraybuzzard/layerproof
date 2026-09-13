@@ -1,6 +1,6 @@
 {
   "name": "pdf-ocr-qc",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local PDF OCR quality review with an Excel control register",
   "private": true,
   "main": "src/main.cjs",
@@ -11,7 +11,8 @@
     "test": "node --test test/*.test.cjs",
     "test:samples": "node scripts/check-samples.mjs",
     "dist:win": "electron-builder --win nsis --x64 --publish never",
-    "dist:mac": "electron-builder --mac dir --publish never"
+    "dist:mac": "electron-builder --mac dir --publish never",
+    "dist:win:signed": "electron-builder --config electron-builder.signed.cjs --win nsis --x64 --publish never"
   },
   "dependencies": {
     "@embedpdf/pdfium": "2.15.0",

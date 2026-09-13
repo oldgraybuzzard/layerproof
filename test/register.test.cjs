@@ -51,3 +51,16 @@ test('saving a blank decision cell preserves the following populated cells',()=>
  const wb=decode(input),out=decode(updateBuffer(input,wb.records[0].key,'Yes','Checked',true));assert.match(strFromU8(out.files[out.member]),/<c r="F3"><v>42<\/v><\/c>/);assert.equal(out.records[1].id,'64');
 });
 test('reviewer and completion date persist in new columns without replacing client content',()=>{const input=fixture(),wb=decode(input);const out=decode(updateBuffer(input,wb.records[0].key,'No','',true,[],{reviewer:'Reviewer A',completedAt:'2026-09-13T20:00:00.000Z'}));assert.equal(out.records[0].qcReviewer,'Reviewer A');assert.equal(out.records[0].qcReviewedOn,'2026-09-13T20:00:00.000Z');assert.match(strFromU8(out.files[out.member]),/<c r="F3"><v>42<\/v><\/c>/);const partial=decode(updateBuffer(zipSync(out.files),out.records[0].key,'Yes','Recheck',false,[],{reviewer:'Reviewer B',completedAt:''}));assert.equal(partial.records[0].qcReviewedOn,'');assert.equal(partial.records[0].qcReviewer,'Reviewer B');assert.equal(partial.reviewerColumn,out.reviewerColumn);});
+
+test('PDF assignment survives workbook transfer, replaces only its row, and respects client columns',()=>{
+ const {assignedFiles}=require('../src/assignments.cjs');
+ const before=fixture(),key=decode(before).records[0].key;
+ const out=decode(updateBuffer(before,key,'No','',true,[],{reviewer:'Worker',completedAt:'2026-09-13T12:00:00Z',pdfAssignment:'Delivery 1 & 2/64.PDF'}));
+ assert.equal(out.records[0].pdfAssignment,'Delivery 1 & 2/64.PDF');assert.equal(out.records[1].pdfAssignment,'');
+ assert.match(strFromU8(out.files[out.member]),/<c r="F3"><v>42<\/v><\/c>/);
+ const moved=[{relative:'Delivery 1 & 2/64.PDF',name:'64.PDF',path:'Z:/Project/Delivery 1 & 2/64.PDF'},{relative:'Other/64.PDF',name:'64.PDF',path:'Z:/Project/Other/64.PDF'}];
+ assert.deepEqual(assignedFiles(out.records[0],moved,matchFiles).exact,[moved[0].path]);
+ assert.equal(assignedFiles(out.records[0],moved.slice(1),matchFiles).assignmentMissing,true);
+ const second=decode(updateBuffer(zipSync(out.files),key,'Yes','Issue',false,[],{reviewer:'Worker',pdfAssignment:'Other/64.PDF'}));assert.equal(second.assignmentColumn,out.assignmentColumn);assert.equal(second.records[0].pdfAssignment,'Other/64.PDF');
+ for(const value of ['../64.pdf','C:/private/64.pdf','/tmp/64.pdf'])assert.throws(()=>updateBuffer(before,key,'No','',true,[],{reviewer:'Worker',completedAt:'2026-09-13T12:00:00Z',pdfAssignment:value}),/assignment/);
+});

@@ -33,3 +33,12 @@ test('rotation validation and pending state cover undo, re-export, and invalid p
  const bytes=await fixture();await assert.rejects(()=>correct(bytes,[],[{page:1,degrees:45}]),/90/);await assert.rejects(()=>correct(bytes,[],[{page:99,degrees:90}]),/Invalid page/);await assert.rejects(()=>correct(bytes,[],[{page:1,degrees:90},{page:1,degrees:180}]),/one/);
  const {pendingRotationCount}=await import('../src/review-controls.mjs');assert.equal(pendingRotationCount(new Map([[1,90]]),new Map()),1);assert.equal(pendingRotationCount(new Map([[1,0]]),new Map()),0);assert.equal(pendingRotationCount(new Map([[1,90]]),new Map([[1,90]])),0);assert.equal(pendingRotationCount(new Map([[1,0],[2,90]]),new Map([[1,90]])),2);
 });
+
+test('deskew preserves text, saves transformed bounds, combines with correction and rotation',async()=>{
+ const bytes=await fixture(),before=await inspect(bytes,1),hidden=before.objects.find(o=>o.editable);
+ const result=await correct(bytes,[{page:1,index:hidden.index,before:hidden.text,after:'Fixed word'}],[{page:1,degrees:90}],[{page:1,degrees:2.5}]);
+ assert.equal(await rotationOf(result.bytes),90);const after=await inspect(result.bytes,1);assert.equal(after.objects.find(o=>o.index===hidden.index).text,'Fixed word');
+ assert.notDeepEqual(after.objects[0].bounds,before.objects[0].bounds);assert(result.verification.deskewReadback);assert.equal(result.verification.pageContentPixelsUnchanged,false);assert(result.verification.deskews[0].scale<1);
+ for(const degrees of [-10,-0.1,0.1,10])assert((await correct(bytes,[],[],[{page:1,degrees}])).verification.deskewReadback);
+ await assert.rejects(()=>correct(bytes,[],[],[{page:1,degrees:11}]),/deskew angle/);
+});

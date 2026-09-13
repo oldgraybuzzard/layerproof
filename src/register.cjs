@@ -37,12 +37,12 @@ function decode(buffer) {
       if(qcColumns.length>1)throw Error('Multiple QC review columns found. Keep one QC Reviewed or QC Performed column.');
       const qcColumn=qcColumns[0]||null;
       const auditColumn=name=>{const columns=Object.keys(header.cells).filter(c=>String(header.cells[c]).trim().toLowerCase()===name);if(columns.length>1||columns.some(c=>colNumber(c)<=5))throw Error('Use one '+name+' column after A–E.');return columns[0]||null;};
-      const reviewerColumn=auditColumn('qc reviewed by'),reviewedOnColumn=auditColumn('qc reviewed on');
+      const reviewerColumn=auditColumn('qc reviewed by'),reviewedOnColumn=auditColumn('qc reviewed on'),assignmentColumn=auditColumn('pdf assignment');
       if(qcColumn&&colNumber(qcColumn)<=5)throw Error('Place QC Reviewed after the existing A–E control columns.');
       // Append beyond every existing cell and merged range, never overwrite a client column.
       const refs=[...strFromU8(files[member]).matchAll(/\b(?:r|ref)="([A-Z]+)[0-9]+(?::([A-Z]+)[0-9]+)?"/g)];
       const lastColumn=refs.reduce((max,m)=>Math.max(max,colNumber(m[1]),m[2]?colNumber(m[2]):0),5);
-      registers.push({sheet:sheet['@name'],member,headerRow:header.row,qcColumn,reviewerColumn,reviewedOnColumn,nextColumn:colName(lastColumn+1),records:rows.filter(r=>r.row>header.row && r.cells.A?.trim()).map(r=>({key:member+':'+r.row,row:r.row,id:r.cells.A,format:r.cells.B||'',compliant:r.cells.C||'',hasIssues:r.cells.D||'',concerns:r.cells.E||'',qcReviewed:qcColumn?reviewedValue(r.cells[qcColumn]):null,qcReviewer:r.cells[reviewerColumn]||'',qcReviewedOn:r.cells[reviewedOnColumn]||''}))});
+      registers.push({sheet:sheet['@name'],member,headerRow:header.row,qcColumn,reviewerColumn,reviewedOnColumn,assignmentColumn,nextColumn:colName(lastColumn+1),records:rows.filter(r=>r.row>header.row && r.cells.A?.trim()).map(r=>({key:member+':'+r.row,row:r.row,id:r.cells.A,format:r.cells.B||'',compliant:r.cells.C||'',hasIssues:r.cells.D||'',concerns:r.cells.E||'',qcReviewed:qcColumn?reviewedValue(r.cells[qcColumn]):null,qcReviewer:r.cells[reviewerColumn]||'',qcReviewedOn:r.cells[reviewedOnColumn]||'',pdfAssignment:r.cells[assignmentColumn]||''}))});
     }
   }
   if(registers.length!==1) throw Error(registers.length ? 'Multiple control sheets found. Use a workbook with one Document ID / Has Issues register.' : 'No control sheet found. Expected Document ID in column A and Has Issues in column D.');
@@ -96,6 +96,14 @@ function updateBuffer(buffer,key,hasIssues,concerns,reviewed,legacyReviewedKeys=
       if(!wb.reviewedOnColumn)xml=patchCell(xml,dateCol+wb.headerRow,'QC Reviewed On');
       xml=patchCell(xml,reviewerCol+record.row,audit.reviewer.trim());xml=patchCell(xml,dateCol+record.row,reviewed?audit.completedAt:'');
       column=colName(Math.max(colNumber(column),colNumber(reviewerCol),colNumber(dateCol)));
+      if(audit.pdfAssignment!==undefined){
+        const assignment=require('./assignments.cjs').portablePath(audit.pdfAssignment);
+        const assignmentCol=wb.assignmentColumn||colName(Math.max(next,colNumber(column)+1));
+        if(colNumber(assignmentCol)>16384)throw Error('No free Excel column remains for PDF Assignment.');
+        if(!wb.assignmentColumn)xml=patchCell(xml,assignmentCol+wb.headerRow,'PDF Assignment');
+        xml=patchCell(xml,assignmentCol+record.row,assignment);
+        column=colName(Math.max(colNumber(column),colNumber(assignmentCol)));
+      }
     }
     // Keep the used range accurate for Excel and readers that honor dimension.
     xml=xml.replace(/<dimension\b[^>]*\bref="([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?"[^>]*\/>/,(_,left,top,right,bottom)=>`<dimension ref="${left}${top}:${colName(Math.max(colNumber(right||left),colNumber(column)))}${wb.records.reduce((max,r)=>Math.max(max,r.row),Number(bottom||top))}"/>`);
