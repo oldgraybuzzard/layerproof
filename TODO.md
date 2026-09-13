@@ -29,4 +29,4 @@ Windows verification: https://github.com/oldgraybuzzard/layerproof/actions/runs/
 - [x] Accept boundary-space extraction changes while preserving strict text/content checks.
 - [x] Add regression tests for adjacent deletions and unsupported replacement characters.
 - [x] Verify sample-document batches (108 and 192 deletions) without changing source files.
-- [ ] Windows release validation.
+- [x] Windows release validation: 50 tests, installation, upgrade, shortcuts, uninstall and data preservation passed: https://github.com/oldgraybuzzard/layerproof/actions/runs/34779547176.
