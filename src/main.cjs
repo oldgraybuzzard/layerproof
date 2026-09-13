@@ -5,7 +5,17 @@ app.setPath('userData', require('node:path').join(app.getPath('appData'),'PDF OC
 app.setAppUserModelId('com.kendallfelder.pdfocrqc');
 const fs=require('node:fs/promises'); const path=require('node:path');
 const {decode,hash,scanPDFs,matchFiles,discoveryReport,saveRegister}=require('./register.cjs');
-let window,session=null,saving=false;
+let window,helpWindow,session=null,saving=false;
+async function showHelp(){
+  if(helpWindow&&!helpWindow.isDestroyed()){helpWindow.show();helpWindow.focus();return;}
+  helpWindow=new BrowserWindow({parent:window,width:1080,height:820,minWidth:640,minHeight:500,title:'LayerProof '+app.getVersion()+' — Help',icon:path.join(__dirname,'assets/layerproof.png'),webPreferences:{contextIsolation:true,nodeIntegration:false,sandbox:true}});
+  helpWindow.setMenu(null);
+  helpWindow.on('page-title-updated',event=>event.preventDefault());
+  helpWindow.webContents.setWindowOpenHandler(()=>({action:'deny'}));
+  helpWindow.on('closed',()=>{helpWindow=null;});
+  await helpWindow.loadFile(path.join(__dirname,'help.html'));
+}
+
 const argument=name=>{const i=process.argv.indexOf(name);return i>=0?process.argv[i+1]:null;};
 function publicSession() {if(!session) return null; const {workbook,folder,sheet,records,files,reviews,diagnostics}=session; return {workbook,folder,sheet,records,files,reviews,diagnostics};}
 async function loadSession(workbook,folder) {
@@ -19,6 +29,7 @@ async function persistReviews(){const temp=session.statePath+'.tmp';await fs.wri
 function selectedRecord(key){const r=session?.records.find(r=>r.key===key);if(!r)throw Error('Open a workbook and select a document first.');return r;}
 function selectedFile(filename){if(!session?.files.some(f=>f.path===filename))throw Error('Choose a PDF from the selected document folder.');return filename;}
 function handle(name,fn){ipcMain.handle(name,async(_event,...args)=>{try{return {ok:true,value:await fn(...args)};}catch(e){return {ok:false,error:e.message};}});}
+handle('help',async()=>{await showHelp();return true;});
 handle('initial',async()=>publicSession());
 handle('open-session',async()=>{
   const w=await dialog.showOpenDialog(window,{title:'Open control workbook',filters:[{name:'Excel workbook',extensions:['xlsx']}],properties:['openFile']});if(w.canceled)return null;
@@ -100,6 +111,7 @@ app.whenReady().then(async()=>{
   let startupError='';if(workbook&&folder)try{await loadSession(workbook,folder);}catch(e){startupError=e.message;}
   window=new BrowserWindow({width:1550,height:1000,minWidth:1050,minHeight:720,backgroundColor:'#eef2f4',title:'LayerProof',icon:path.join(__dirname,'assets/layerproof.png'),webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
   if(process.env.QC_DEBUG) window.webContents.on('console-message', (event, ...args)=>console.log('renderer:', event.message || args));
+  window.webContents.on('before-input-event',(event,input)=>{if(input.type==='keyDown'&&input.key==='F1'){event.preventDefault();showHelp().catch(e=>dialog.showErrorBox('Help could not open',e.message));}});
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   window.webContents.on('will-navigate',e=>e.preventDefault());
   window.webContents.on('will-prevent-unload',event=>{const choice=dialog.showMessageBoxSync(window,{type:'question',buttons:['Keep reviewing','Discard unsaved changes'],defaultId:0,cancelId:0,message:'This review has unsaved changes.'});if(choice===1)event.preventDefault();});

@@ -175,3 +175,5 @@ await guarded(async()=>{session=await window.qc.initial();if(session){$('project
 $('mark-page-checked').onclick=()=>{if(!pdf||busy)return;checked.add(pageNumber);dirtyChanged();updateCoverage();notice('Page '+pageNumber+' marked checked. Save to record your review.');};
 async function rotateView(turn){if(!pdf||busy)return;viewRotations.set(pageNumber,((viewRotations.get(pageNumber)||0)+turn+360)%360);updateCorrectionControls();await renderPage();notice(pendingPDFChanges()?'Page rotation staged. Choose Export corrected PDF to save the turned page.':'Page orientation restored; no new PDF changes to export.');}
 $('rotate-left').onclick=guarded(()=>rotateView(-90));$('rotate-right').onclick=guarded(()=>rotateView(90));
+
+$('help').onclick=guarded(()=>window.qc.help());

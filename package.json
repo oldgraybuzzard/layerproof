@@ -1,6 +1,6 @@
 {
   "name": "pdf-ocr-qc",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Local PDF OCR quality review with an Excel control register",
   "private": true,
   "main": "src/main.cjs",

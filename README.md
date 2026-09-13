@@ -4,7 +4,7 @@ A local desktop application for reviewing existing PDF text against the scanned 
 
 ## Windows installation
 
-Run `dist/LayerProof Setup 0.1.9.exe` on a Windows 10/11 x64 machine. This development release is unsigned; it has not yet been exercised on a physical Windows machine. Use your organization's normal software approval process.
+Run `dist/LayerProof Setup 0.1.10.exe` on a Windows 10/11 x64 machine. This development release is unsigned; it has not yet been exercised on a physical Windows machine. Use your organization's normal software approval process.
 
 1. Open **LayerProof** and choose **Open review project**.
 2. Select the `.xlsx` control workbook, then the folder containing PDFs. Subfolders are included.
@@ -104,3 +104,7 @@ Both save buttons write **QC Reviewed = Yes** when all pages are checked, or **N
 Select a stored text segment, open **Correct OCR text**, choose the block, then **Delete erroneous text** to stage removal of the whole invisible block (for example, a punch hole interpreted as a character). For a stray character within a valid line, edit the replacement text instead. Export applies deletions to the separate corrected PDF and records them in the change log. Original PDFs and scanned page appearance stay unchanged.
 
 **Mark page checked** checks the current page without changing the document’s issue decision or concerns. Quick concerns include **Turned page**, **Skewed image**, **Crooked page**, and **Bad scan**. The toolbar’s rotation arrows turn the current page view by 90 degrees, including its OCR boxes. Rotation is staged per page and saved with **Export corrected PDF**, with or without text corrections. The new PDF keeps the original filename in your chosen separate folder. The scan and OCR layer turn together. The change log records the original and final orientation. Save to workbook records review decisions, not PDF rotations; export before leaving the document. Closing or switching documents warns about unexported turns.
+
+## In-app Help
+
+Choose **Help** in the header or press **F1** to open the offline reviewer guide in a separate window. Search by topic or use **Print guide** for a paper/PDF handout. The guide covers setup, workbook columns, page review, saving and resuming, text correction/deletion, exported page turns, accuracy, and troubleshooting. It does not require a project to be open and does not change review data.
