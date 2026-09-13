@@ -3,6 +3,7 @@ $ErrorActionPreference = 'Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'This test requires Windows.' }
 $registryRoot = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall'
 function Find-App {
+  if (!(Test-Path $registryRoot)) { return @() }
   @(Get-ChildItem $registryRoot | Get-ItemProperty | Where-Object { $_.DisplayName -in @('LayerProof','PDF OCR QC') })
 }
 if ((Find-App).Count) { throw 'Use a disposable machine without an existing LayerProof/PDF OCR QC installation.' }
