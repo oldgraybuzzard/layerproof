@@ -133,3 +133,9 @@ Workbook completion and assignment are portable; unfinished page checks, local d
 ## LayerProof 0.3.1
 
 Fixes a false export rejection when deleting neighboring OCR blocks changes the boundary spaces returned by PDFium's text reader. Verification still checks block identity, order, count, render mode, internal spacing and all non-boundary characters, alongside the page appearance checks. Failures now identify the page and text block. Validated against the document 64 reproduction, a 108-deletion margin-text batch, and a representative 192-deletion batch. These are local test scenarios, not the worker's unavailable exact pending change list. Client originals were not modified.
+
+## Attached Foxit accessibility reports (0.3.2)
+
+Select the folder of PDFs produced by the report runner when opening a review project. LayerProof reads the attached report on document open and rechecks it on save. The Accessibility report panel lists all 32 checks. Pass—project criteria excludes only logical reading order and color contrast; other failures, skipped checks and manual checks stay actionable. Missing or conflicting reports cannot pass.
+
+Saving appends Accessibility Result, Details, Report, Checked On, and PDF SHA256 columns to Excel. These fields also appear in client handoff summaries. The existing compliance column and OCR decisions remain separate. Re-run Foxit after exporting corrections and use the newly checked folder as the project source. The assessment records report results, not Section 508 certification.

@@ -64,3 +64,11 @@ test('PDF assignment survives workbook transfer, replaces only its row, and resp
  const second=decode(updateBuffer(zipSync(out.files),key,'Yes','Issue',false,[],{reviewer:'Worker',pdfAssignment:'Other/64.PDF'}));assert.equal(second.assignmentColumn,out.assignmentColumn);assert.equal(second.records[0].pdfAssignment,'Other/64.PDF');
  for(const value of ['../64.pdf','C:/private/64.pdf','/tmp/64.pdf'])assert.throws(()=>updateBuffer(before,key,'No','',true,[],{reviewer:'Worker',completedAt:'2026-09-13T12:00:00Z',pdfAssignment:value}),/assignment/);
 });
+test('accessibility audit survives reopening, clears stale results and preserves client columns',()=>{
+ const input=fixture(),wb=decode(input),accessibility={status:'Pass—project criteria',details:'30 passed; 2 excluded',reportName:'64.pdf.accreport.html',checkedAt:'2026-09-14T12:00:00Z',pdfSha256:'a'.repeat(64)};
+ const audit={reviewer:'Reviewer',completedAt:'2026-09-14T12:00:00Z',pdfAssignment:'64.pdf',accessibility};
+ const saved=updateBuffer(input,wb.records[0].key,'No','',true,[],audit),out=decode(saved);
+ assert.deepEqual(out.records[0].accessibility,accessibility);assert.match(strFromU8(out.files[out.member]),/<f>1\+1<\/f>/);assert.match(strFromU8(out.files[out.member]),/<c r="F3"><v>42<\/v><\/c>/);
+ const next=decode(updateBuffer(saved,wb.records[0].key,'No','',true,[],{...audit,accessibility:{status:'Not assessed',details:'No report'}}));
+ assert.equal(next.records[0].accessibility.status,'Not assessed');assert.equal(next.records[0].accessibility.reportName,'');assert.deepEqual(next.accessibilityColumns,out.accessibilityColumns);
+});

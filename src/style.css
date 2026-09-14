@@ -9,3 +9,6 @@
 .project-summary{padding:10px;background:#edf4f2;border-radius:6px;font-size:11px;line-height:1.7;white-space:pre-line}#output-folder{font-size:10px;overflow-wrap:anywhere}#recovery{max-width:650px;width:90vw}#recovery textarea{width:100%;margin-top:8px}#recovery p{line-height:1.6}#draft-status{font-size:10px}#reviewer{width:100%}
 
 #paper{overflow:hidden;background:white}#canvas,#overlay{transform-origin:center center}#pending-list{max-height:160px;overflow:auto}.pending-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #ddd}.pending-row span{flex:1;overflow-wrap:anywhere;font-size:12px}.pending-row button{flex-shrink:0}#deskew-dialog{max-width:440px}#deskew-angle{width:120px}
+
+#accessibility-panel{border:1px solid #c6dada;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px}#accessibility-panel>summary{font-weight:700;margin-bottom:8px}#accessibility-rules{padding-left:18px;max-height:240px;overflow:auto}#accessibility-rules li{margin:6px 0}
+#accessibility-panel{flex-shrink:0;max-height:none;overflow:visible}#accessibility-panel details{max-height:none}#accessibility-panel p{overflow-wrap:anywhere;line-height:1.5}

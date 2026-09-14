@@ -31,7 +31,7 @@ function queue(){
 }
 async function mayLeave(){if(!dirty&&!pendingPDFChanges())return true;const d=$('discard');d.showModal();return new Promise(resolve=>{ $('cancel-discard').onclick=()=>{d.close();resolve(false);};$('confirm-discard').onclick=()=>{clearDraft();d.close();resolve(true);};});}
 function updateCoverage(){$('handoff').disabled=busy||!session;updateCorrectionControls();for(const id of ['mark-page-checked','rotate-left','rotate-right','deskew','change-output','open-corrected'])$(id).disabled=busy||!pdf;$('review-next-page').disabled=busy||!pdf||pageNumber>=pdf.numPages;for(const id of ['decision','concerns','pdf-file','page-checked','page-clear'])$(id).disabled=busy;document.querySelectorAll('[data-issue]').forEach(b=>b.disabled=busy);const count=pdf?.numPages||0;$('coverage').textContent=`${checked.size} of ${count} pages checked${count&&checked.size===count?' · all pages checked':''}`;$('page-checked').checked=checked.has(pageNumber);$('save').disabled=$('save-next').disabled=!pdf||busy;$('prev').disabled=!pdf||pageNumber<=1;$('next').disabled=!pdf||pageNumber>=count;$('page-number').disabled=!pdf;}
-function clearViewer(){outputVerified=null;correctedOpen=false;viewDeskews=new Map();exportedDeskews=new Map();$('pdf-kind').textContent='No PDF open';$('open-corrected').hidden=true;viewRotations=new Map();exportedRotations=new Map();pendingCorrections=new Map();exportedCorrections=new Map();pdf=null;pageText='';segments=[];selected=-1;refs={};pageFindings=new Map();checked=new Set();$('canvas').width=0;$('canvas').height=0;$('paper').style.width='0px';$('paper').style.height='0px';$('overlay').replaceChildren();$('ocr-text').replaceChildren();$('empty').hidden=false;$('text-warning').hidden=true;$('selected-text').textContent='Nothing selected';$('flag-selection').disabled=true;$('page-count').textContent='/ —';$('text-count').textContent='No page loaded';$('reference').value='';$('metrics').textContent='';updateCoverage();}
+function clearViewer(){showAccessibility(null);outputVerified=null;correctedOpen=false;viewDeskews=new Map();exportedDeskews=new Map();$('pdf-kind').textContent='No PDF open';$('open-corrected').hidden=true;viewRotations=new Map();exportedRotations=new Map();pendingCorrections=new Map();exportedCorrections=new Map();pdf=null;pageText='';segments=[];selected=-1;refs={};pageFindings=new Map();checked=new Set();$('canvas').width=0;$('canvas').height=0;$('paper').style.width='0px';$('paper').style.height='0px';$('overlay').replaceChildren();$('ocr-text').replaceChildren();$('empty').hidden=false;$('text-warning').hidden=true;$('selected-text').textContent='Nothing selected';$('flag-selection').disabled=true;$('page-count').textContent='/ —';$('text-count').textContent='No page loaded';$('reference').value='';$('metrics').textContent='';updateCoverage();}
 async function selectRecord(r){
   if(busy||!await mayLeave())return;
   loadVersion++;renderVersion++;renderTask?.cancel();loadingTask?.destroy();
@@ -52,6 +52,7 @@ async function openPDF(filename){
   const loaded=await loadingTask.promise;if(version!==loadVersion){await loaded.destroy();return;}pdf=loaded;
   const prev=savedReview(record);if(prev?.pdf===filename&&prev.signature===signature)checked=new Set(prev.checkedPages.filter(p=>p>=1&&p<=pdf.numPages));else if(prev)notice('This PDF or workbook decision changed. Page checkmarks have been reset.');
   pageNumber=1;zoom=1;$('page-count').textContent='/ '+pdf.numPages;$('page-number').max=pdf.numPages;$('empty').hidden=true;await renderPage();
+  const assessment=await window.qc.accessibility({pdf:filename,signature});if(version!==loadVersion)return;showAccessibility(assessment);
   notice(`Loaded ${pdf.numPages} pages. Compare the scan with the stored text; extraction alone does not establish accuracy.`);
 }
 async function renderPage(){
@@ -212,3 +213,10 @@ $('deskew-angle').oninput=()=>{const value=Number($('deskew-angle').value);if(Nu
 const cancelDeskew=()=>{applyDeskewPreview(viewDeskews.get(pageNumber)||0);$('deskew-dialog').close();};
 $('cancel-deskew').onclick=cancelDeskew;$('deskew-dialog').oncancel=cancelDeskew;
 $('stage-deskew').onclick=guarded(async()=>{const value=Number($('deskew-angle').value);if(!Number.isFinite(value)||Math.abs(value)>10)throw Error('Use an angle between −10 and 10 degrees.');viewDeskews.set(pageNumber,Math.round(value*10)/10);$('deskew-dialog').close();scheduleDraft();updateCoverage();await renderPage();notice('Straightening staged. Export corrected PDF to save it.');});
+
+function showAccessibility(result){
+ $('accessibility-status').textContent=result?.status||'Open a PDF to assess';
+ $('accessibility-details').textContent=result?`${result.reportName?result.reportName+' — ':''}${result.details}`:'';
+ $('accessibility-rules').replaceChildren();
+ for(const r of result?.rules||[]){const item=document.createElement('li');item.textContent=`${r.name}: ${r.status}${r.excluded?' — excluded from project criteria':''}`;$('accessibility-rules').append(item);}
+}

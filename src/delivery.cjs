@@ -45,9 +45,9 @@ async function createHandoff(parent,session,version){
      await fs.writeFile(path.join(folder,relative+'.corrections.json'),JSON.stringify(portableAudit,null,2),{flag:'wx'});delivered=relative;copied++;
     }}
    }
-   rows.push({documentId:r.id,excelRow:r.row,status,hasIssues:r.hasIssues,concerns:r.concerns,reviewer:r.qcReviewer,reviewedOn:r.qcReviewedOn,pdfAssignment:r.pdfAssignment||'',correctedPDF:delivered});
+   rows.push({documentId:r.id,excelRow:r.row,status,hasIssues:r.hasIssues,concerns:r.concerns,reviewer:r.qcReviewer,reviewedOn:r.qcReviewedOn,pdfAssignment:r.pdfAssignment||'',accessibilityResult:r.accessibility?.status||'',accessibilityDetails:r.accessibility?.details||'',accessibilityReport:r.accessibility?.reportName||'',accessibilityCheckedOn:r.accessibility?.checkedAt||'',accessibilityPDFSHA256:r.accessibility?.pdfSha256||'',correctedPDF:delivered});
   }
-  const keys=['documentId','excelRow','status','hasIssues','concerns','reviewer','reviewedOn','pdfAssignment','correctedPDF'];
+  const keys=['documentId','excelRow','status','hasIssues','concerns','reviewer','reviewedOn','pdfAssignment','accessibilityResult','accessibilityDetails','accessibilityReport','accessibilityCheckedOn','accessibilityPDFSHA256','correctedPDF'];
   await fs.writeFile(path.join(folder,'review-summary.csv'),'\ufeff'+[keys.map(csvCell).join(','),...rows.map(r=>keys.map(k=>csvCell(r[k])).join(','))].join('\r\n'),{flag:'wx'});
   const report={application:'LayerProof',version,createdAt:new Date().toISOString(),totalDocuments:rows.length,correctedPDFs:copied,warnings,documents:rows};
   await fs.writeFile(path.join(folder,'manifest.json'),JSON.stringify(report,null,2),{flag:'wx'});
