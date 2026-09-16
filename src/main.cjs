@@ -83,6 +83,7 @@ handle('export-discovery',async()=>{
   await fs.writeFile(result.filePath,JSON.stringify(discoveryReport(session),null,2));return result.filePath;
 });
 let pdfBusy=false;
+const pageCountCache=new Map();
 function pdfJob(data){return new Promise((resolve,reject)=>{
   const worker=new Worker(path.join(__dirname,'pdf-worker.cjs'),{workerData:data});let settled=false;
   const finish=(error,result)=>{if(settled)return;settled=true;clearTimeout(timer);worker.terminate();error?reject(error):resolve(result);};
@@ -90,6 +91,13 @@ function pdfJob(data){return new Promise((resolve,reject)=>{
   worker.once('message',message=>finish(message.ok?null:Error(message.error),message.result));
   worker.once('error',e=>finish(e));worker.once('exit',()=>{if(!settled)finish(Error('PDF editing worker stopped unexpectedly.'));});
 });}
+handle('page-count',async filename=>{
+  selectedFile(filename);const stat=await fs.stat(filename),signature=stat.size+':'+stat.mtimeMs,cached=pageCountCache.get(filename);
+  if(cached?.signature===signature)return cached.pageCount;
+  const {pageCount}=await pdfJob({action:'page-count',filename}),after=await fs.stat(filename);
+  if(signature!==after.size+':'+after.mtimeMs)throw Error('PDF changed while counting pages.');
+  pageCountCache.set(filename,{signature,pageCount});return pageCount;
+});
 async function validatePDF(filename,signature){selectedFile(filename);const st=await fs.stat(filename);if(signature!==st.size+':'+st.mtimeMs)throw Error('The PDF changed. Reopen it before correcting text.');}
 handle('inspect-ocr',async payload=>{
   if(pdfBusy||saving)throw Error('Wait for the current save or PDF operation.');pdfBusy=true;
