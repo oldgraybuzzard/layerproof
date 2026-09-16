@@ -24,3 +24,15 @@ export function matchingTextObject(objects,text){const candidates=objects.filter
 export function mergedCorrections(exported,pending){return [...new Map([...exported,...pending]).values()].filter(e=>e.after!==e.before);}
 
 export function pendingRotationCount(current,exported){return [...new Set([...current.keys(),...exported.keys()])].filter(page=>(current.get(page)||0)!==(exported.get(page)||0)).length;}
+
+export function parsePageSelection(value,total){
+	if(!Number.isInteger(total)||total<1)throw Error('Open a PDF before selecting pages.');
+	const input=String(value).trim();if(!input)throw Error('Enter at least one page number.');
+	const pages=new Set();
+	for(const part of input.split(',')){
+		const match=part.trim().match(/^(\d+)(?:\s*-\s*(\d+))?$/);if(!match)throw Error('Use page numbers and ranges such as 2-6, 9.');
+		const start=Number(match[1]),end=Number(match[2]||match[1]);if(start<1||end>total)throw Error(`Pages must be between 1 and ${total}.`);if(start>end)throw Error('Page ranges must start with the lower page number.');
+		for(let page=start;page<=end;page++)pages.add(page);
+	}
+	return [...pages].sort((a,b)=>a-b);
+}
