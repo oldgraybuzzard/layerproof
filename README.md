@@ -53,6 +53,8 @@ npm run dist:win
 npm run dist:mac
 ```
 
+`dist:win` creates the unsigned Windows x64 NSIS installer. `dist:mac` creates unsigned DMG and ZIP distributions for the current Mac architecture. Apple Silicon cannot run electron-builder's x64 NSIS tool, so use the Windows GitHub runner for a complete Windows installer build.
+
 PDF.js is pinned to a release compatible with Electron 40. Test the viewer when upgrading either dependency. The lockfile fixes the rest of the dependency tree.
 
 To launch against local inputs:
@@ -67,7 +69,7 @@ The sample audit is read-only and checks first/middle/last page extraction, file
 npm run test:samples -- "/path/control.xlsx" "/path/PDFs"
 ```
 
-`scripts/ui-smoke.cjs` is a developer UI test using a temporary workbook copy. The GitHub Actions workflow builds the Windows installer on Windows when manually triggered or a version tag is pushed. Sample documents and control workbooks are not packaged or committed.
+`scripts/ui-smoke.cjs` is a developer UI test using a temporary workbook copy. The Windows workflow validates every main-branch and pull-request build. The release-candidate workflow can be run manually to upload Windows and macOS artifacts; a `v*` tag also creates a draft GitHub Release. Draft releases remain unpublished until the EULA, Windows signature, macOS signing/notarization, and installer checks are reviewed. Sample documents and control workbooks are not packaged or committed.
 
 ## Implementation
 

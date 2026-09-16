@@ -19,7 +19,7 @@
     "test": "node --test test/*.test.cjs",
     "test:samples": "node scripts/check-samples.mjs",
     "dist:win": "electron-builder --win nsis --x64 --publish never",
-    "dist:mac": "electron-builder --mac dir --publish never",
+    "dist:mac": "electron-builder --mac dmg zip --publish never",
     "dist:win:signed": "electron-builder --config electron-builder.signed.cjs --win nsis --x64 --publish never"
   },
   "dependencies": {
