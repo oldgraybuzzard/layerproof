@@ -1,0 +1,107 @@
+DRAFT FOR LEGAL REVIEW - NOT APPROVED FOR PRODUCTION DISTRIBUTION
+
+LAYERPROOF END USER LICENSE AGREEMENT
+Effective date: September 16, 2026
+
+This End User License Agreement ("Agreement") is between Melken TechWork
+("Licensor") and the person or organization installing or using LayerProof
+("Licensee"). Installing, copying, or using LayerProof means that Licensee
+accepts this Agreement. If Licensee does not accept it, Licensee must not
+install or use LayerProof.
+
+1. LICENSE GRANT
+
+Subject to this Agreement and any applicable order or written authorization,
+Licensor grants Licensee a limited, non-exclusive, non-transferable,
+non-sublicensable license to install and use LayerProof for Licensee's internal
+document-review work. All rights not expressly granted are reserved.
+
+2. RESTRICTIONS
+
+Licensee must not sell, sublicense, rent, lease, distribute, or make LayerProof
+available to another person or organization except as expressly authorized in
+writing by Licensor. Licensee must not remove proprietary notices or circumvent
+technical restrictions. Licensee must not reverse engineer, decompile, or
+disassemble LayerProof except to the limited extent applicable law expressly
+permits despite this restriction.
+
+3. OWNERSHIP
+
+LayerProof is licensed, not sold. Licensor retains all right, title, and
+interest in LayerProof and its documentation, including all intellectual
+property rights. This Agreement does not grant rights to Licensor's names,
+logos, or trademarks.
+
+4. LICENSEE FILES AND RESPONSIBILITIES
+
+LayerProof processes selected workbooks and PDF files locally. Licensee retains
+ownership of its files and is responsible for having the rights needed to use
+them, reviewing all generated results, maintaining backups, and protecting
+sensitive information. LayerProof's review results do not constitute legal,
+accessibility, archival, or regulatory certification.
+
+5. THIRD-PARTY SOFTWARE
+
+LayerProof includes third-party software governed by separate license terms.
+Those notices and terms are provided in THIRD-PARTY-NOTICES.txt and apply to
+the applicable components. This Agreement does not limit rights granted under
+those third-party licenses.
+
+6. UPDATES AND SUPPORT
+
+Licensor may provide updates, corrections, or support at its discretion or as
+specified in a separate written agreement. Updates may replace or modify prior
+versions and remain subject to this Agreement unless accompanied by different
+terms.
+
+7. TERMINATION
+
+This Agreement terminates automatically if Licensee materially breaches it and
+does not cure the breach where a cure is required by applicable law. On
+termination, Licensee must stop using and remove all copies of LayerProof.
+Sections that by their nature should survive termination will survive.
+
+8. DISCLAIMER OF WARRANTIES
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, LAYERPROOF IS PROVIDED "AS IS" AND
+"AS AVAILABLE," WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, OR
+STATUTORY, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, TITLE, AND NON-INFRINGEMENT. LICENSOR DOES NOT WARRANT THAT LAYERPROOF
+WILL BE ERROR-FREE OR THAT ITS OUTPUT WILL BE COMPLETE OR ACCURATE. RIGHTS THAT
+CANNOT LEGALLY BE DISCLAIMED ARE NOT AFFECTED.
+
+9. LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, LICENSOR WILL NOT BE LIABLE FOR
+INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES,
+OR FOR LOSS OF DATA, PROFITS, REVENUE, OR BUSINESS, ARISING FROM LAYERPROOF OR
+THIS AGREEMENT. LICENSOR'S TOTAL LIABILITY WILL NOT EXCEED THE AMOUNT LICENSEE
+PAID FOR LAYERPROOF DURING THE TWELVE MONTHS BEFORE THE EVENT GIVING RISE TO THE
+CLAIM. LIMITATIONS THAT ARE NOT ENFORCEABLE UNDER APPLICABLE LAW DO NOT APPLY.
+
+10. COMPLIANCE WITH LAW
+
+Licensee must use LayerProof in compliance with applicable law, including data
+protection, confidentiality, export-control, and sanctions requirements.
+
+11. GOVERNING TERMS
+
+The governing law and forum stated in an applicable order or separate written
+agreement control. If none is stated, the laws and courts of Licensor's
+principal place of business apply, without regard to conflict-of-law rules. The
+United Nations Convention on Contracts for the International Sale of Goods does
+not apply.
+
+12. GENERAL
+
+This Agreement and any applicable written order constitute the entire agreement
+about LayerProof and supersede prior discussions on that subject. An applicable
+order controls only where it expressly conflicts with this Agreement. If a
+provision is unenforceable, it will be limited to the minimum extent necessary
+and the remaining provisions will continue. A waiver must be in writing.
+Licensee may not assign this Agreement without Licensor's written consent.
+
+Licensor: Melken TechWork
+Copyright (c) 2026 Melken TechWork. All rights reserved.
+
+END OF DRAFT

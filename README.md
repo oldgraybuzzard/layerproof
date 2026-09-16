@@ -2,6 +2,8 @@
 
 A local desktop application for reviewing existing PDF text against the scanned page and recording decisions in an Excel control register. Works offline; no OCR service, upload, Python installation, or Microsoft Excel installation is required.
 
+> **License:** LayerProof is proprietary software, not open source. Public access to this source repository does not grant permission to use, copy, modify, or distribute the software except under the terms in [LICENSE.txt](LICENSE.txt).
+
 ## Windows installation
 
 Run `dist/LayerProof Setup 0.2.0.exe` on a Windows 10/11 x64 machine. This development release is unsigned; it has not yet been exercised on a physical Windows machine. Use your organization's normal software approval process.
@@ -74,6 +76,10 @@ Electron uses an isolated, sandboxed renderer and a narrow preload API. PDF.js r
 ## Publisher
 
 Copyright © 2026 Melken TechWork. The application and installer carry Melken TechWork company metadata. This build is not Authenticode-signed; a trusted Windows signing certificate or signing service is required for a verified publisher signature. Resource editing is enabled independently of code signing.
+
+## License
+
+LayerProof is proprietary software and is not open source. [LICENSE.txt](LICENSE.txt) contains the draft commercial end-user license agreement and is included in packaged applications. The assisted Windows installer displays it for acceptance; future DMG builds are configured to display it as well. The draft must receive legal review and have its release warning removed before production distribution. Third-party components remain governed by the terms in [src/THIRD-PARTY-NOTICES.txt](src/THIRD-PARTY-NOTICES.txt).
 
 ## OCR corrections (0.1.5)
 

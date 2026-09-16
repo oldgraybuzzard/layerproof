@@ -1,11 +1,19 @@
 {
-  "name": "pdf-ocr-qc",
-  "version": "0.3.3",
+  "name": "LayerProof",
+  "version": "0.3.4",
   "description": "Local PDF OCR quality review with an Excel control register",
   "private": true,
   "main": "src/main.cjs",
   "author": "Melken TechWork",
-  "license": "UNLICENSED",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oldgraybuzzard/layerproof.git"
+  },
+  "homepage": "https://github.com/oldgraybuzzard/layerproof#readme",
+  "bugs": {
+    "url": "https://github.com/oldgraybuzzard/layerproof/issues"
+  },
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.cjs",
@@ -33,7 +41,8 @@
     },
     "files": [
       "src/**/*",
-      "package.json"
+      "package.json",
+      "LICENSE.txt"
     ],
     "win": {
       "target": [
@@ -57,11 +66,15 @@
       "uninstallDisplayName": "LayerProof",
       "createStartMenuShortcut": true,
       "deleteAppDataOnUninstall": false,
-      "runAfterFinish": false
+      "runAfterFinish": false,
+      "license": "LICENSE.txt"
     },
     "mac": {
       "category": "public.app-category.productivity",
       "identity": null
+    },
+    "dmg": {
+      "license": "LICENSE.txt"
     },
     "copyright": "Copyright \u00a9 2026 Melken TechWork"
   }
