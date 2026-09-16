@@ -1,11 +1,18 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs/promises');const os=require('node:os');const path=require('node:path');
-const {zipSync,unzipSync,strToU8,strFromU8}=require('fflate');const {decode,updateBuffer,matchFiles,saveRegister,hash}=require('../src/register.cjs');
+const {zipSync,unzipSync,strToU8,strFromU8}=require('fflate');const {createRegisterBuffer,decode,updateBuffer,matchFiles,saveRegister,hash}=require('../src/register.cjs');
 function fixture(){return zipSync(Object.fromEntries(Object.entries({
 'xl/workbook.xml':'<workbook><sheets><sheet name="Control" r:id="rId1"/></sheets></workbook>',
 'xl/_rels/workbook.xml.rels':'<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>',
 'xl/worksheets/sheet1.xml':'<worksheet><sheetData><row r="2"><c r="A2" t="inlineStr"><is><t>Document ID</t></is></c><c r="D2" t="inlineStr"><is><t>Has Issues</t></is></c></row><row r="3"><c r="A3"><v>64</v></c><c r="C3" s="1"><f>1+1</f><v>2</v></c><c r="D3" s="2" t="inlineStr"><is><t>No</t></is></c><c r="F3"><v>42</v></c></row><row r="4"><c r="A4"><v>64</v></c><c r="D4" s="2"/></row></sheetData><mergeCells><mergeCell ref="A1:E1"/></mergeCells></worksheet>',
 'xl/styles.xml':'<styleSheet>preserve me</styleSheet>'}).map(([k,v])=>[k,strToU8(v)])));}
 test('finds headers below title and retains duplicate row identities',()=>{const r=decode(fixture()).records;assert.equal(r.length,2);assert.equal(r[0].row,3);assert.equal(r[0].duplicate,true);assert.notEqual(r[0].key,r[1].key);});
+test('creates a writable register directly from discovered PDFs',()=>{
+ const files=[{name:'same.pdf',relative:'Box A/same.pdf'},{name:'same.pdf',relative:'Box B/same.pdf'},{name:'A & B.pdf',relative:'A & B.pdf'}];
+ const input=createRegisterBuffer(files),wb=decode(input);
+ assert.equal(wb.sheet,'LayerProof Review');assert.deepEqual(wb.records.map(r=>[r.id,r.pdfAssignment]),[['Box A/same','Box A/same.pdf'],['Box B/same','Box B/same.pdf'],['A & B','A & B.pdf']]);
+ const saved=decode(updateBuffer(input,wb.records[0].key,'No','',true,[],{reviewer:'Reviewer',completedAt:'2026-09-16T12:00:00Z',pdfAssignment:'Box A/same.pdf'}));
+ assert.equal(saved.records[0].qcReviewed,true);assert.equal(saved.records[0].hasIssues,'No');assert.equal(saved.records[0].pdfAssignment,'Box A/same.pdf');
+});
 test('patches only requested D/E cells, preserves styles, formulas and ZIP members',()=>{
  const before=fixture(),wb=decode(before),updated=updateBuffer(before,wb.records[0].key,'Yes','Page 1: <bad> & “text”\n=not a formula');const result=decode(updated);
  assert.equal(result.records[0].concerns,'Page 1: <bad> & “text”\n=not a formula');assert.equal(result.records[1].hasIssues,'');

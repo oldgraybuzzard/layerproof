@@ -207,6 +207,7 @@ document.addEventListener('keydown',e=>{
   if(key==='j'||key==='k'){e.preventDefault();guarded(()=>moveInQueue(e.shiftKey?(key==='j'?'last':'first'):(key==='j'?'next':'previous')))();}
   if(e.key==='?'){e.preventDefault();$('shortcuts-dialog').showModal();}
 });
+const saveHelp=document.querySelector('.save-help'),saveHelpDetails=document.createElement('details'),saveHelpSummary=document.createElement('summary');saveHelpDetails.className='save-help-details';saveHelpSummary.textContent='How saving works';saveHelp.before(saveHelpDetails);saveHelpDetails.append(saveHelpSummary,saveHelp);
 const shortcutsDialog=$('shortcuts-dialog');$('shortcuts').onclick=()=>shortcutsDialog.showModal();$('close-shortcuts').onclick=$('done-shortcuts').onclick=()=>shortcutsDialog.close();shortcutsDialog.onclick=e=>{if(e.target===shortcutsDialog)shortcutsDialog.close();};$('shortcut-help').onclick=guarded(async()=>{shortcutsDialog.close();await window.qc.help();});
 window.addEventListener('beforeunload',e=>{persistDraft();if(dirty||pendingPDFChanges()){e.preventDefault();e.returnValue='';}});
 let resizeTimer;new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>guarded(renderPage)(),180);}).observe($('scan-scroll'));

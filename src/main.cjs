@@ -9,7 +9,7 @@ const {Worker}=require('node:worker_threads');
 app.setPath('userData', process.env.LAYERPROOF_TEST_USER_DATA||require('node:path').join(app.getPath('appData'),'PDF OCR QC'));
 app.setAppUserModelId('com.kendallfelder.pdfocrqc');
 const fs=require('node:fs/promises'); const path=require('node:path');
-const {decode,hash,scanPDFs,matchFiles,discoveryReport,saveRegister}=require('./register.cjs');
+const {createRegisterBuffer,decode,hash,scanPDFs,matchFiles,discoveryReport,saveRegister}=require('./register.cjs');
 let window,helpWindow,session=null,saving=false;
 const settingsPath=()=>path.join(app.getPath('userData'),'settings.json');
 const settings=()=>readJSON(settingsPath(),{reviewer:'',projects:{}});
@@ -31,8 +31,8 @@ async function showHelp(){
 
 const argument=name=>{const i=process.argv.indexOf(name);return i>=0?process.argv[i+1]:null;};
 function publicSession() {if(!session) return null; const {workbook,folder,sheet,records,files,reviews,diagnostics,outputFolder,outputs}=session; return {workbook,folder,sheet,records,files,reviews,diagnostics,outputFolder,outputs};}
-async function loadSession(workbook,folder) {
-  const wb=decode(await fs.readFile(workbook)); const {files,diagnostics}=await scanPDFs(folder);
+async function loadSession(workbook,folder,discovery=null) {
+  const wb=decode(await fs.readFile(workbook)); const {files,diagnostics}=discovery||await scanPDFs(folder);
   const statePath=path.join(app.getPath('userData'),'reviews-'+hash(Buffer.from(path.resolve(workbook)))+'.json');
   let reviews={};try{reviews=JSON.parse(await fs.readFile(statePath,'utf8'));}catch(e){if(e.code!=='ENOENT')throw Error('Saved review history could not be read. Restore or rename '+statePath);}
   session={workbook,folder,sheet:wb.sheet,records:wb.records.map(r=>({...r,...assignedFiles(r,files,matchFiles)})),files,reviews,diagnostics,statePath,fingerprint:wb.fingerprint};
@@ -62,9 +62,19 @@ handle('validate-draft',async draft=>{const row=selectedRecord(draft.key);await 
 handle('output-folder',async()=>{if(pdfBusy||saving)throw Error('Wait for the current save or export.');if(!session)throw Error('Open a project first.');const picked=await dialog.showOpenDialog(window,{title:'Select corrected PDF output folder',defaultPath:session.outputFolder||path.dirname(session.folder),properties:['openDirectory','createDirectory']});if(picked.canceled)return null;session.outputFolder=await fs.realpath(picked.filePaths[0]);remember();return session.outputFolder;});
 handle('initial',async()=>publicSession());
 handle('open-session',async()=>{
-  const w=await dialog.showOpenDialog(window,{title:'Open control workbook',filters:[{name:'Excel workbook',extensions:['xlsx']}],properties:['openFile']});if(w.canceled)return null;
-  const f=await dialog.showOpenDialog(window,{title:'Select folder containing PDFs',properties:['openDirectory']});if(f.canceled)return null;
-  return loadSession(w.filePaths[0],f.filePaths[0]);
+  const choice=await dialog.showMessageBox(window,{type:'question',title:'Open review project',message:'How do you want to create the document queue?',detail:'Use an existing Excel control workbook, or start from a folder of PDFs and let LayerProof create a review register.',buttons:['Use Excel workbook','Start from PDF folder','Cancel'],defaultId:0,cancelId:2,noLink:true});
+  if(choice.response===2)return null;
+  if(choice.response===0){
+    const workbook=await dialog.showOpenDialog(window,{title:'Open control workbook',filters:[{name:'Excel workbook',extensions:['xlsx']}],properties:['openFile']});if(workbook.canceled)return null;
+    const folder=await dialog.showOpenDialog(window,{title:'Select folder containing PDFs',properties:['openDirectory']});if(folder.canceled)return null;
+    return loadSession(workbook.filePaths[0],folder.filePaths[0]);
+  }
+  const folder=await dialog.showOpenDialog(window,{title:'Select the root folder containing all project PDFs',properties:['openDirectory']});if(folder.canceled)return null;
+  const root=folder.filePaths[0],discovery=await scanPDFs(root);
+  if(!discovery.files.length)throw Error('No PDFs were found in the selected folder.');
+  const destination=await dialog.showSaveDialog(window,{title:'Save the LayerProof review register',defaultPath:path.join(root,'LayerProof review register.xlsx'),filters:[{name:'Excel workbook',extensions:['xlsx']}]});if(destination.canceled)return null;
+  await fs.writeFile(destination.filePath,createRegisterBuffer(discovery.files));
+  return loadSession(destination.filePath,root,discovery);
 });
 handle('rescan',async changeFolder=>{
   if(!session)throw Error('Open a review project first.');

@@ -13,6 +13,26 @@ const normalize = id => String(id ?? '').trim().replace(/\.pdf$/i,'').toLowerCas
 const colNumber = col => [...col].reduce((n,c)=>n*26+c.charCodeAt(0)-64,0);
 const colName = n => {let s='';while(n){n--;s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26);}return s;};
 const reviewedValue = value => /^(yes|true|1)$/i.test(String(value??'').trim());
+function createRegisterBuffer(files) {
+  if(!Array.isArray(files)||!files.length)throw Error('No PDFs were found in the selected folder.');
+  const cell=(address,text)=>`<c r="${address}" t="inlineStr"><is><t xml:space="preserve">${escape(String(text))}</t></is></c>`;
+  const rows=[
+    `<row r="1">${cell('A1','Document ID')}${cell('B1','Format')}${cell('C1','Compliant')}${cell('D1','Has Issues')}${cell('E1','Concerns')}${cell('F1','PDF Assignment')}</row>`,
+    ...files.map((file,index)=>{
+      const row=index+2,relative=String(file.relative||file.name||'').replace(/\\/g,'/');
+      const id=relative.replace(/\.pdf$/i,'');
+      return `<row r="${row}">${cell('A'+row,id)}${cell('B'+row,'PDF')}${cell('F'+row,relative)}</row>`;
+    })
+  ];
+  const members={
+    '[Content_Types].xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>',
+    '_rels/.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>',
+    'xl/workbook.xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="LayerProof Review" sheetId="1" r:id="rId1"/></sheets></workbook>',
+    'xl/_rels/workbook.xml.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>',
+    'xl/worksheets/sheet1.xml':`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:F${files.length+1}"/><sheetData>${rows.join('')}</sheetData></worksheet>`
+  };
+  return zipSync(Object.fromEntries(Object.entries(members).map(([name,xml])=>[name,strToU8(xml)])));
+}
 function decode(buffer) {
   const files = unzipSync(buffer);
   const xml = p => files[p] ? parser.parse(strFromU8(files[p])) : {};
@@ -207,4 +227,4 @@ async function saveRegister(filename,expectedHash,key,hasIssues,concerns,reviewe
     throw e;
   } finally {if(temp) await fs.unlink(temp).catch(()=>{}); await handle.close(); await fs.unlink(lock).catch(()=>{});}
 }
-module.exports={decode,hash,normalize,updateBuffer,listPDFs,scanPDFs,matchFiles,discoveryReport,saveRegister};
+module.exports={createRegisterBuffer,decode,hash,normalize,updateBuffer,listPDFs,scanPDFs,matchFiles,discoveryReport,saveRegister};

@@ -7,13 +7,15 @@ A local desktop application for reviewing existing PDF text against the scanned 
 Run `dist/LayerProof Setup 0.2.0.exe` on a Windows 10/11 x64 machine. This development release is unsigned; it has not yet been exercised on a physical Windows machine. Use your organization's normal software approval process.
 
 1. Open **LayerProof** and choose **Open review project**.
-2. Select the `.xlsx` control workbook, then the folder containing PDFs. Subfolders are included.
+2. Choose **Use Excel workbook** to select an existing `.xlsx` control workbook and PDF folder. If you only have PDFs, choose **Start from PDF folder**, select the root folder, and choose where to save the review register LayerProof creates. Subfolders are included.
 3. Select a document. Column A supplies its ID. The Excel row number distinguishes duplicate IDs. Exact filenames match case-insensitively; suffix/combined files are suggestions that require explicit assignment.
 4. Compare the original page with the stored text. Click either a text segment or its box to highlight the corresponding content. **Show OCR on scan** displays reconstructed text over the scan; it is a diagnostic approximation, not the original PDF font rendering.
 5. Add a quick concern when a page has problems. Moving to another page or saving marks that page checked, provided the added concern is still present. Use **No issues on this page** for clear pages. The manual checkbox remains available.
 6. Choose the document-wide Yes/No decision and save. **Save to workbook** saves the one pending review and leaves the application open, ready to close. All earlier saved decisions are already in Excel; unsaved edits cannot be carried into another document without saving or explicitly discarding them. **No** requires all pages checked and empty concerns. **Yes** requires a concern and can be saved before the full review is complete. **Save & next document** saves this document to Excel and moves to the next available unfinished row, wrapping to earlier unfinished work when needed. The default **Needs review** queue hides a review after all its pages are checked and it is saved. Use **Completed reviews**, **All available PDFs**, or **All workbook rows** to show it again. Saving partial findings keeps that document in Needs review.
 
 Saves update **D (Has Issues)**, **E (Concerns)** and **QC Reviewed** for the selected row. On first save, the app appends QC Reviewed after the existing columns if neither QC Reviewed nor QC Performed exists. It also copies matching completed reviews from this computer into that new column. Columns B/C, including 508 Compliant, are not altered: OCR review does not establish accessibility compliance. Existing Has Issues decisions alone do not indicate completion. QC Reviewed (or QC Performed) values Yes, TRUE, and 1 indicate completion, regardless of whether the document has issues.
+
+For a PDF-first project, LayerProof creates one workbook row per discovered PDF. The document ID is its path relative to the selected root without the `.pdf` extension, and **PDF Assignment** stores the full relative PDF path. This keeps same-named files in different subfolders distinct and makes the generated register portable with the PDF folder structure.
 
 ## Finding missing documents
 
